@@ -1,0 +1,19 @@
+{
+  "mcpServers": {
+    "next-devtools": {
+      "command": "npx",
+      "args": ["-y", "next-devtools-mcp@latest"]
+    },
+    "solana-dev": {
+      "command": "ts-node",
+      "args": ["/Users/clarckvader/Documents/projects/voxis/solana-dev-mcp/index.ts"]
+    },
+    "stitch": {
+      "type": "http",
+      "url": "https://stitch.googleapis.com/mcp",
+      "headers": {
+        "X-Goog-Api-Key": "AQ.Ab8RN6I0zCybu5MBucswziF3XQbbHVDSLlUA4IQGvmxHNUfslg"
+      }
+    }
+  }
+}

@@ -1,0 +1,163 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ── Fincas ────────────────────────────────────────────────────────────────────
+
+model Farm {
+  id        String   @id @default(cuid())
+  name      String
+  country   String   @default("Bolivia")
+  region    String
+  altitude  Int
+  lat       Float
+  lng       Float
+  producer  String
+  story     String?
+  photoIpfs String?
+  createdAt DateTime @default(now())
+  lots      Lot[]
+}
+
+// ── Lotes de café ─────────────────────────────────────────────────────────────
+
+model Lot {
+  id              String      @id @default(cuid())
+  farmId          String
+  farm            Farm        @relation(fields: [farmId], references: [id])
+  name            String
+  variety         String      // Geisha, Bourbon, Typica, Caturra...
+  process         ProcessType
+  harvestDate     DateTime
+  cuppingScore    Float?
+  cuppingNotes    String?
+  cupper          String?
+  roastLevel      String?
+  roastDate       DateTime?
+  roaster         String?
+  metadataIpfs    String?     // CID del JSON completo del lote
+  blockchainHash  String?     // hash SHA-256 registrado en TraceabilityRegistry
+  txSignature     String?     // signature de la tx en Solana
+  active          Boolean     @default(true)
+  createdAt       DateTime    @default(now())
+  cups            Cup[]
+  menuItems       MenuItem[]
+}
+
+enum ProcessType {
+  NATURAL
+  WASHED
+  HONEY
+  ANAEROBIC
+  CARBONIC_MACERATION
+}
+
+// ── Trucks ────────────────────────────────────────────────────────────────────
+
+model Truck {
+  id        String    @id @default(cuid())
+  name      String
+  location  String
+  lat       Float
+  lng       Float
+  active    Boolean   @default(true)
+  baristas  Barista[]
+  cups      Cup[]
+  menuItems MenuItem[]
+}
+
+model Barista {
+  id      String @id @default(cuid())
+  name    String
+  truckId String
+  truck   Truck  @relation(fields: [truckId], references: [id])
+  cups    Cup[]
+}
+
+model MenuItem {
+  id      String  @id @default(cuid())
+  truckId String
+  truck   Truck   @relation(fields: [truckId], references: [id])
+  lotId   String
+  lot     Lot     @relation(fields: [lotId], references: [id])
+  active  Boolean @default(true)
+  price   Float   // en BOB
+}
+
+// ── Tazas y QR ───────────────────────────────────────────────────────────────
+
+model Cup {
+  id             String    @id @default(cuid())
+  qrCode         String    @unique  // "CFT-2026-001234"
+  lotId          String
+  lot            Lot       @relation(fields: [lotId], references: [id])
+  truckId        String
+  truck          Truck     @relation(fields: [truckId], references: [id])
+  baristaId      String
+  barista        Barista   @relation(fields: [baristaId], references: [id])
+  method         String    // Espresso, V60, Chemex, AeroPress, Moka, ColdBrew
+  waterTemp      Float?    // °C
+  extractionTime Int?      // segundos
+  coffeeDose     Float?    // gramos
+  waterRatio     Float?    // ratio agua:café
+  baristaNotes   String?
+  redeemed       Boolean   @default(false)
+  redeemedAt     DateTime?
+  walletAddress  String?   // Solana pubkey (base58)
+  mintAddress    String?   // Mint address del NFT
+  createdAt      DateTime  @default(now())
+  bitacora       Bitacora?
+}
+
+// ── Bitácora sensorial ────────────────────────────────────────────────────────
+
+model Bitacora {
+  id            String   @id @default(cuid())
+  cupId         String   @unique
+  cup           Cup      @relation(fields: [cupId], references: [id])
+  mintAddress   String
+
+  // Sección 05: Análisis sensorial (1-5)
+  fragrancia    Int?
+  aroma         Int?
+  sabor         Int?
+  saborResidual Int?
+  balance       Int?
+  dulzor        Int?
+  tazaLimpia    Int?
+  acidez        Int?
+  cuerpo        Int?
+  preferencia   Int?
+  scoreSCA      Float?   // suma / 50 pts
+
+  // Sección 06: Notas aromáticas (multi-select)
+  notasFrutado   Boolean @default(false)
+  notasChocolate Boolean @default(false)
+  notasFloral    Boolean @default(false)
+  notasCitrico   Boolean @default(false)
+  notasNuez      Boolean @default(false)
+  notasCaramelo  Boolean @default(false)
+  notasBerries   Boolean @default(false)
+  notasHerbal    Boolean @default(false)
+  notasEspeciado Boolean @default(false)
+  notasAhumado   Boolean @default(false)
+
+  // Sección 07: Notas libres (voz → texto via ElevenLabs)
+  notasLibres  String?
+  audioIpfs    String?  // CID del audio original
+
+  // Sección 08: Foto de la taza
+  photoIpfs    String?
+
+  // Sección 09: Comentarios de cata
+  comentarios  String?
+
+  metadataIpfs String?   // CID actualizado del NFT tras completar bitácora
+  completedAt  DateTime?
+  createdAt    DateTime  @default(now())
+}
