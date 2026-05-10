@@ -1,8 +1,14 @@
 import { z } from "zod";
+import { config as dotenvConfig } from "dotenv";
+import { resolve } from "path";
+import { fileURLToPath } from "url";
+
+dotenvConfig({ path: resolve(fileURLToPath(import.meta.url), "../../.env") });
 
 const envSchema = z.object({
   DATABASE_URL: z.string(),
   REDIS_URL: z.string().default("redis://localhost:6379"),
+  REDIS_ENABLED: z.string().transform((v) => v !== "false").default("true"),
 
   JWT_SECRET: z.string(),
   BACKEND_WALLET_KEYPAIR: z.string(),

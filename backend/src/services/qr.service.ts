@@ -1,12 +1,11 @@
 import QRCode from "qrcode";
 import { config } from "../config.js";
 
-let _counter = 0;
-
 export function generateQrCode(): string {
   const year = new Date().getFullYear();
-  const seq = String(++_counter).padStart(6, "0");
-  return `CFT-${year}-${seq}`;
+  const ts  = Date.now().toString(36).toUpperCase().slice(-5); // last 5 chars of base-36 timestamp
+  const rnd = Math.random().toString(36).slice(2, 5).toUpperCase(); // 3 random chars
+  return `CFT-${year}-${ts}${rnd}`;
 }
 
 export async function qrCodeToPng(qrCode: string): Promise<Buffer> {

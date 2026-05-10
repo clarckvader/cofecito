@@ -9,6 +9,8 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@11labs/react": "^0.2.0",
+    "@elevenlabs/client": "^1.7.0",
     "@radix-ui/react-dialog": "^1.1.15",
     "@radix-ui/react-navigation-menu": "^1.2.14",
     "@radix-ui/react-separator": "^1.1.8",

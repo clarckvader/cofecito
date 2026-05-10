@@ -19,6 +19,7 @@ import voiceRoutes from "./routes/voice.js";
 import trazabilidadRoutes from "./routes/trazabilidad.js";
 import rampRoutes from "./routes/ramp.js";
 import feedbackRoutes from "./routes/feedback.js";
+import analyticsRoutes from "./routes/analytics.js";
 
 const server = Fastify({
   logger: {
@@ -65,6 +66,7 @@ async function build() {
   await server.register(trazabilidadRoutes, { prefix: `${prefix}/trazabilidad` });
   await server.register(rampRoutes,         { prefix: `${prefix}/ramp` });
   await server.register(feedbackRoutes,     { prefix: `${prefix}/feedback` });
+  await server.register(analyticsRoutes,    { prefix: `${prefix}/analytics` });
 
   return server;
 }

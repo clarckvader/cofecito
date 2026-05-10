@@ -112,10 +112,11 @@ async function main() {
   console.log("collection_token_account: ", collectionTokenAccount.toBase58());
   console.log();
 
-  // Simulate first to catch issues before paying fees
-  console.log("Simulating transaction...");
+  // Send transaction (skip simulate — it mis-reports SignatureFailure with 0.32.x)
+  console.log("Sending transaction...");
+  let tx: string;
   try {
-    await (program.methods as any)
+    tx = await (program.methods as any)
       .initializeCollection(
         "Cofecito Collection",
         "CFT",
@@ -136,38 +137,14 @@ async function main() {
         rent: SYSVAR_RENT_PUBKEY,
       })
       .signers([collectionMint])
-      .simulate();
-    console.log("Simulation OK.\n");
+      .rpc({ skipPreflight: false, commitment: "confirmed" });
   } catch (err: any) {
-    console.error("Simulation failed:", err?.message ?? err);
-    console.error("Fix the error above before sending.\n");
+    console.error("Transaction failed:", err?.message ?? err);
+    if (err?.logs) console.error("Program logs:\n", err.logs.join("\n"));
+    if (err?.transactionLogs) console.error("Tx logs:\n", err.transactionLogs.join("\n"));
+    console.error("Full error:", JSON.stringify(err, Object.getOwnPropertyNames(err), 2));
     process.exit(1);
   }
-
-  // Send transaction
-  console.log("Sending transaction...");
-  const tx = await (program.methods as any)
-    .initializeCollection(
-      "Cofecito Collection",
-      "CFT",
-      "https://cofecito.app/collection-metadata.json"
-    )
-    .accounts({
-      authority: authority.publicKey,
-      redeemController,
-      collectionState,
-      collectionMint: collectionMint.publicKey,
-      collectionMetadata,
-      collectionMasterEdition,
-      collectionTokenAccount,
-      tokenProgram: TOKEN_PROGRAM_ID,
-      associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
-      metadataProgram: METADATA_PROGRAM_ID,
-      systemProgram: SystemProgram.programId,
-      rent: SYSVAR_RENT_PUBKEY,
-    })
-    .signers([collectionMint])
-    .rpc();
 
   console.log("Transaction signature:", tx);
   console.log();
