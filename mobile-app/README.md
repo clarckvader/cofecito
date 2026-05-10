@@ -1,5 +1,9 @@
 # Cofecito — Mobile App
 
+https://github.com/user-attachments/assets/212d9cd9-30f2-436e-a7cf-16a66a87ec74
+
+https://github.com/user-attachments/assets/a4f9f822-d81d-425b-93db-a335774f52f1
+
 Flutter application that turns every cup of Bolivian specialty coffee into a Web3 experience. Each physical cup has a QR code that, when scanned, mints a unique NFT (ERC-721) on an Ethereum L2 network containing the full story of that cup.
 
 ---
