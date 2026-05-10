@@ -2,6 +2,16 @@
 
 A Web3 platform connecting Bolivian specialty coffee farms to consumers through blockchain traceability, NFT experiences, and AI-powered sensory logging.
 
+
+
+https://github.com/user-attachments/assets/a3335764-0ae5-47cb-8baa-0449eefa4d77
+
+
+
+https://github.com/user-attachments/assets/44856b97-1794-4e6e-8ef9-85a6fe20286f
+
+
+
 ```
 Farm → Lot registered on-chain → Truck → Barista prepares cup
   → QR printed on cup → Consumer scans → ElevenLabs asks "What did you taste?"
