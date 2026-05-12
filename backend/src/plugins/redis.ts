@@ -1,7 +1,11 @@
 import fp from "fastify-plugin";
 import { FastifyPluginAsync } from "fastify";
-import Redis from "ioredis";
+import { createRequire } from "module";
 import { config } from "../config.js";
+
+const _require = createRequire(import.meta.url);
+type RedisClass = typeof import("ioredis").default;
+const Redis = _require("ioredis") as RedisClass;
 
 // In-memory fallback used when REDIS_ENABLED=false
 class MemoryStore {
@@ -32,9 +36,11 @@ class MemoryStore {
   async quit(): Promise<"OK"> { return "OK"; }
 }
 
+type RedisInstance = InstanceType<RedisClass>;
+
 declare module "fastify" {
   interface FastifyInstance {
-    redis: Pick<Redis, "get" | "set" | "del" | "quit">;
+    redis: Pick<RedisInstance, "get" | "set" | "del" | "quit">;
   }
 }
 
