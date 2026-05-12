@@ -3,14 +3,14 @@ import { z } from "zod";
 
 const farmBody = z.object({
   name: z.string(),
-  country: z.string().optional(),
+  country: z.string().nullish(),
   region: z.string(),
   altitude: z.number().int(),
   lat: z.number(),
   lng: z.number(),
   producer: z.string(),
-  story: z.string().optional(),
-  photoIpfs: z.string().optional(),
+  story: z.string().nullish(),
+  photoIpfs: z.string().nullish(),
 });
 
 const farmsRoutes: FastifyPluginAsync = async (fastify) => {

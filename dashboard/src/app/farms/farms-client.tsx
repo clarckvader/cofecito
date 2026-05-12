@@ -1,10 +1,12 @@
 "use client";
 
-import { useState } from "react";
-import { Plus, Trash2, MapPin, Mountain } from "lucide-react";
+import { useState, useRef } from "react";
+import { Plus, Trash2, MapPin, Mountain, ImagePlus, Loader2 } from "lucide-react";
 import { useAuth } from "@/contexts/auth";
 import { LoginModal } from "@/components/auth/login-modal";
 import { api, type Farm } from "@/lib/api";
+
+const BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001";
 
 type Props = { initialFarms: Farm[] };
 
@@ -22,6 +24,10 @@ export default function FarmsClient({ initialFarms }: Props) {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [selected, setSelected] = useState<Farm | null>(null);
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   function field(k: keyof typeof form, label: string, type = "text", props = {}) {
     return (
@@ -38,19 +44,44 @@ export default function FarmsClient({ initialFarms }: Props) {
     );
   }
 
+  function handlePhotoChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0] ?? null;
+    setPhotoFile(file);
+    setPhotoPreview(file ? URL.createObjectURL(file) : null);
+  }
+
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
     setSaving(true);
     setError("");
     try {
-      const farm = await api.farms.create({ ...form, photoIpfs: null });
+      let photoIpfs: string | null = null;
+      if (photoFile) {
+        setUploading(true);
+        const fd = new FormData();
+        fd.append("file", photoFile);
+        const token = localStorage.getItem("cf_token") ?? "";
+        const res = await fetch(`${BASE}/api/upload/image`, {
+          method: "POST",
+          headers: { Authorization: `Bearer ${token}` },
+          body: fd,
+        });
+        if (!res.ok) throw new Error("Error al subir la foto");
+        const { cid } = await res.json();
+        photoIpfs = cid;
+        setUploading(false);
+      }
+      const farm = await api.farms.create({ ...form, photoIpfs });
       setFarms((f) => [farm, ...f]);
       setShowForm(false);
       setForm(EMPTY_FORM);
+      setPhotoFile(null);
+      setPhotoPreview(null);
     } catch (err: any) {
       setError(err.message);
     } finally {
       setSaving(false);
+      setUploading(false);
     }
   }
 
@@ -102,13 +133,31 @@ export default function FarmsClient({ initialFarms }: Props) {
                   className="w-full bg-[var(--surface-high)] border border-[var(--outline-variant)] rounded-lg px-3 py-2 text-sm text-[var(--on-surface)] outline-none focus:border-[var(--primary)] resize-none"
                 />
               </div>
+              <div className="col-span-2">
+                <label className="text-xs text-[var(--on-surface-variant)] mb-1 block">Foto de la finca</label>
+                <div
+                  onClick={() => fileInputRef.current?.click()}
+                  className="w-full border border-dashed border-[var(--outline-variant)] rounded-lg p-4 flex flex-col items-center justify-center gap-2 cursor-pointer hover:border-[var(--primary)] transition-colors"
+                >
+                  {photoPreview ? (
+                    <img src={photoPreview} alt="preview" className="h-24 object-cover rounded" />
+                  ) : (
+                    <>
+                      <ImagePlus size={20} className="text-[var(--on-surface-variant)]" />
+                      <span className="text-xs text-[var(--on-surface-variant)]">Haz clic para subir una imagen</span>
+                    </>
+                  )}
+                </div>
+                <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handlePhotoChange} />
+              </div>
               {error && <p className="col-span-2 text-xs text-red-400">{error}</p>}
               <div className="col-span-2 flex gap-2 justify-end">
                 <button type="button" onClick={() => setShowForm(false)} className="px-4 py-2 text-sm text-[var(--on-surface-variant)] hover:text-[var(--on-surface)]">
                   Cancelar
                 </button>
-                <button type="submit" disabled={saving} className="px-4 py-2 rounded-lg bg-[var(--primary)] text-[var(--on-primary)] text-sm font-semibold disabled:opacity-50">
-                  {saving ? "Guardando..." : "Crear Finca"}
+                <button type="submit" disabled={saving} className="px-4 py-2 rounded-lg bg-[var(--primary)] text-[var(--on-primary)] text-sm font-semibold disabled:opacity-50 flex items-center gap-2">
+                  {saving && <Loader2 size={14} className="animate-spin" />}
+                  {uploading ? "Subiendo foto..." : saving ? "Guardando..." : "Crear Finca"}
                 </button>
               </div>
             </form>

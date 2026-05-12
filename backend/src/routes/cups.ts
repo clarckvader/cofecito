@@ -12,7 +12,7 @@ const generateBody = z.object({
   extractionTime: z.number().int().optional(),
   coffeeDose: z.number().optional(),
   waterRatio: z.number().optional(),
-  baristaNotes: z.string().optional(),
+  baristaNotes: z.string().nullish(),
 });
 
 const redeemBody = z.object({

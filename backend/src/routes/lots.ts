@@ -12,11 +12,11 @@ const lotBody = z.object({
   process: z.nativeEnum(ProcessType),
   harvestDate: z.string().datetime(),
   cuppingScore: z.number().optional(),
-  cuppingNotes: z.string().optional(),
-  cupper: z.string().optional(),
-  roastLevel: z.string().optional(),
+  cuppingNotes: z.string().nullish(),
+  cupper: z.string().nullish(),
+  roastLevel: z.string().nullish(),
   roastDate: z.string().datetime().optional(),
-  roaster: z.string().optional(),
+  roaster: z.string().nullish(),
 });
 
 const lotsRoutes: FastifyPluginAsync = async (fastify) => {

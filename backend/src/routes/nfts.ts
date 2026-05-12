@@ -25,8 +25,8 @@ const bitacoraBody = z.object({
   notasHerbal: z.boolean().optional(),
   notasEspeciado: z.boolean().optional(),
   notasAhumado: z.boolean().optional(),
-  notasLibres: z.string().optional(),
-  comentarios: z.string().optional(),
+  notasLibres: z.string().nullish(),
+  comentarios: z.string().nullish(),
 });
 
 function computeSca(fields: z.infer<typeof bitacoraBody>): number | undefined {
