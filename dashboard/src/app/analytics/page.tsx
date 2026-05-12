@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import { Coffee, Layers, Store, Coins } from "lucide-react";
 import { api } from "@/lib/api";
 
