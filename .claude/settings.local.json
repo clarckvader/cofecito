@@ -10,7 +10,15 @@
       "Bash(pkill -f \"tsx watch\")",
       "Bash(pkill -f \"next dev\")",
       "Bash(pkill -f \"node dist/server\")",
-      "Bash(solana program *)"
+      "Bash(solana program *)",
+      "WebFetch(domain:elevenlabs.io)",
+      "WebSearch",
+      "Bash(npx tsx *)",
+      "Bash(curl -s http://localhost:3001/health)",
+      "Bash(curl -s -X POST http://localhost:3001/api/auth/login -H 'Content-Type: application/json' -d '{\"username\":\"admin\",\"password\":\"cofecito2026\"}')",
+      "Bash(curl -s -X POST http://localhost:3001/api/auth/login -H 'Content-Type: application/json' -H 'Origin: http://localhost:3000' -d '{\"username\":\"admin\",\"password\":\"cofecito2026\"}')",
+      "Bash(node -e \"const m = require\\('@elevenlabs/react'\\); console.log\\(Object.keys\\(m\\).join\\(', '\\)\\)\")",
+      "Bash(npx tsc *)"
     ]
   }
 }

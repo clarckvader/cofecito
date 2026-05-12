@@ -66,7 +66,7 @@ const AROMA_KEYWORDS: Record<keyof Omit<BitacoraFields, "notasLibres">, string[]
 
 export async function transcribeAndParse(audioBuffer: Buffer): Promise<BitacoraFields> {
   const client = getClient();
-  const stream = new Blob([audioBuffer], { type: "audio/mpeg" });
+  const stream = new Blob([new Uint8Array(audioBuffer)], { type: "audio/mpeg" });
   const result = await (client as any).speechToText.convert({
     audio: stream,
     model_id: "scribe_v1",

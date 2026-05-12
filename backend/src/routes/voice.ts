@@ -1,5 +1,6 @@
 import { FastifyPluginAsync } from "fastify";
 import { z } from "zod";
+import { config } from "../config.js";
 import { createBitacoraSession, transcribeAndParse } from "../services/elevenlabs.service.js";
 
 const sessionBody = z.object({
@@ -7,6 +8,17 @@ const sessionBody = z.object({
 });
 
 const voiceRoutes: FastifyPluginAsync = async (fastify) => {
+  // GET /api/voice/token — returns a signed WebSocket URL (no auth required by caller)
+  fastify.get("/token", async (_req, reply) => {
+    // ElevenLabs WebSocket accepts authorization as a query param so the API key
+    // never ships to the browser in source code.
+    const signedUrl =
+      `wss://api.elevenlabs.io/v1/convai/conversation` +
+      `?agent_id=${encodeURIComponent(config.ELEVENLABS_AGENT_ID)}` +
+      `&authorization=${encodeURIComponent(`Bearer ${config.ELEVENLABS_API_KEY}`)}`;
+    return { signedUrl };
+  });
+
   // POST /api/voice/session — create ElevenLabs conversational session
   fastify.post(
     "/session",

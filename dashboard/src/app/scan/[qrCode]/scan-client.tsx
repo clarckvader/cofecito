@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useCallback } from "react";
-import { useConversation } from "@11labs/react";
+import { useState, useCallback, useRef, useEffect } from "react";
+import { Conversation } from "@elevenlabs/client";
 import {
   Mic, MicOff, Coffee, MapPin, Mountain, Thermometer,
   Timer, Droplets, Wallet, ExternalLink, CheckCircle2, Loader2
@@ -37,7 +37,7 @@ type Cup = {
   barista: { name: string };
 };
 
-type Props = { cup: Cup; agentId: string };
+type Props = { cup: Cup; agentId?: string };
 
 const BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001";
 
@@ -53,32 +53,47 @@ export default function ScanClient({ cup, agentId }: Props) {
   const [step, setStep] = useState<"details" | "voice" | "claim">("details");
   const [claiming, setClaiming] = useState(false);
   const [claimError, setClaimError] = useState("");
-  const [voiceStatus, setVoiceStatus] = useState<"idle" | "connecting" | "active" | "ended">("idle");
 
-  const conversation = useConversation({
-    onConnect: () => setVoiceStatus("active"),
-    onDisconnect: () => setVoiceStatus("ended"),
-    onError: () => setVoiceStatus("idle"),
-  });
+  const [voiceStatus, setVoiceStatus] = useState<"idle" | "connecting" | "active" | "ended">("idle");
+  const [voiceError, setVoiceError] = useState("");
+  const conversationRef = useRef<Conversation | null>(null);
+
+  // Clean up on unmount
+  useEffect(() => {
+    return () => { conversationRef.current?.endSession(); };
+  }, []);
 
   const startVoice = useCallback(async () => {
-    if (!agentId) {
-      alert("Agente ElevenLabs no configurado. Configura NEXT_PUBLIC_ELEVENLABS_AGENT_ID.");
-      return;
-    }
+    setVoiceError("");
     setVoiceStatus("connecting");
+
     try {
-      await navigator.mediaDevices.getUserMedia({ audio: true });
-      await conversation.startSession({ agentId });
-    } catch {
+      // Get signed WebSocket URL from backend (avoids WebRTC/LiveKit issues)
+      const tokenRes = await fetch(`${BASE}/api/voice/token`);
+      if (!tokenRes.ok) throw new Error("No se pudo obtener el token de voz.");
+      const { signedUrl } = await tokenRes.json();
+
+      conversationRef.current = await Conversation.startSession({
+        signedUrl,
+        onConnect: () => setVoiceStatus("active"),
+        onDisconnect: () => setVoiceStatus(prev => prev === "active" ? "ended" : "idle"),
+        onError: (msg: string) => {
+          setVoiceError(typeof msg === "string" ? msg : "Error al conectar con el agente de voz.");
+          setVoiceStatus("idle");
+        },
+        onModeChange: () => {},
+      });
+    } catch (err: any) {
+      setVoiceError(err?.message ?? "No se pudo iniciar la sesión de voz.");
       setVoiceStatus("idle");
     }
-  }, [agentId, conversation]);
+  }, []);
 
   const stopVoice = useCallback(async () => {
-    await conversation.endSession();
+    await conversationRef.current?.endSession();
+    conversationRef.current = null;
     setVoiceStatus("ended");
-  }, [conversation]);
+  }, []);
 
   async function connectWallet() {
     const phantom = (window as any).phantom?.solana ?? (window as any).solana;
@@ -242,9 +257,11 @@ export default function ScanClient({ cup, agentId }: Props) {
                 <p className="text-xs text-[#8B5E3C]">Toca para finalizar</p>
               </div>
             ) : voiceStatus === "connecting" ? (
-              <div className="flex items-center justify-center gap-2 text-[#E8B84B]">
-                <Loader2 size={16} className="animate-spin" />
-                <span className="text-sm">Conectando...</span>
+              <div className="space-y-2">
+                <div className="flex items-center justify-center gap-2 text-[#E8B84B]">
+                  <Loader2 size={16} className="animate-spin" />
+                  <span className="text-sm">Conectando...</span>
+                </div>
               </div>
             ) : voiceStatus === "ended" ? (
               <div className="text-green-400 flex items-center justify-center gap-2 text-sm">
@@ -260,8 +277,8 @@ export default function ScanClient({ cup, agentId }: Props) {
                   <Mic size={24} className="text-[#0D0905]" />
                 </button>
                 <p className="text-xs text-[#8B5E3C]">Toca el micrófono para iniciar</p>
-                {!agentId && (
-                  <p className="text-[10px] text-red-400">Agente ElevenLabs no configurado</p>
+                {voiceError && (
+                  <p className="text-[10px] text-red-400 break-words">{voiceError}</p>
                 )}
               </div>
             )}

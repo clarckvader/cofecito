@@ -31,13 +31,19 @@ export default function BaristaTerminal({ lots, trucks }: Props) {
     setGenerating(true);
     setError(null);
     try {
-      // Get a JWT first (barista login) — for MVP use a stored token
-      const loginRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/login`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username: barista.name, password: "demo" }),
-      });
-      const { token } = await loginRes.json();
+      // Use stored admin token, or login as admin if not available
+      let token = localStorage.getItem("cf_token");
+      if (!token) {
+        const loginRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/login`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ username: "admin", password: "cofecito2026" }),
+        });
+        const loginData = await loginRes.json();
+        if (!loginRes.ok) throw new Error(loginData.error ?? "Login failed");
+        token = loginData.token;
+        localStorage.setItem("cf_token", token!);
+      }
 
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/cups/generate`, {
         method: "POST",
@@ -53,7 +59,14 @@ export default function BaristaTerminal({ lots, trucks }: Props) {
           waterRatio: parseFloat(params.ratio.split(":")[1] ?? "2"),
         }),
       });
-      if (!res.ok) throw new Error(await res.text());
+      if (!res.ok) {
+        // Token may have expired — clear and retry once
+        if (res.status === 401) {
+          localStorage.removeItem("cf_token");
+          throw new Error("Sesión expirada, intenta de nuevo");
+        }
+        throw new Error(await res.text());
+      }
       const data = await res.json();
       setLastQr({ qrCode: data.qrCode, qrImageBase64: data.qrImageBase64 });
     } catch (e: any) {
@@ -175,14 +188,38 @@ export default function BaristaTerminal({ lots, trucks }: Props) {
         {/* QR result */}
         {lastQr && (
           <div className="bg-[var(--surface-container)] rounded-xl border border-[var(--primary)] p-5 text-center">
-            <div className="text-xs text-[var(--on-surface-variant)] mb-2">QR generado exitosamente</div>
-            <div className="font-mono text-[var(--primary)] text-lg font-bold mb-3">{lastQr.qrCode}</div>
+            <div className="text-xs text-green-400 mb-2 flex items-center justify-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-green-400 inline-block" />
+              QR generado exitosamente
+            </div>
+            <div className="font-mono text-[var(--primary)] text-lg font-bold mb-4">{lastQr.qrCode}</div>
             <img
               src={`data:image/png;base64,${lastQr.qrImageBase64}`}
               alt="QR Code"
-              className="mx-auto w-40 h-40 rounded-lg"
+              className="mx-auto w-44 h-44 rounded-lg"
             />
-            <div className="text-xs text-[var(--on-surface-variant)] mt-2">Mostrar al cliente para escanear</div>
+            <div className="text-xs text-[var(--on-surface-variant)] mt-3 mb-4">
+              Mostrar al cliente para escanear
+            </div>
+
+            {/* Demo link */}
+            <div className="border-t border-[var(--outline-variant)] pt-4">
+              <div className="text-[10px] text-[var(--on-surface-variant)] uppercase tracking-widest mb-2">
+                Link de demo (sin app móvil)
+              </div>
+              <a
+                href={`/scan/${lastQr.qrCode}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[var(--primary)] text-[var(--on-primary)] text-sm font-bold hover:opacity-90 transition-opacity"
+              >
+                <QrCode size={14} />
+                Abrir experiencia del cliente →
+              </a>
+              <div className="text-[10px] text-[var(--on-surface-variant)] mt-2 font-mono break-all">
+                /scan/{lastQr.qrCode}
+              </div>
+            </div>
           </div>
         )}
       </div>
