@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import { ArrowUpRight } from "lucide-react";
 import { api, type Farm, type Lot } from "@/lib/api";
 
