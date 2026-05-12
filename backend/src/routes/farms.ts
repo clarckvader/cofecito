@@ -32,7 +32,14 @@ const farmsRoutes: FastifyPluginAsync = async (fastify) => {
     { preHandler: [fastify.authenticate] },
     async (req) => {
       const data = farmBody.parse(req.body);
-      return fastify.prisma.farm.create({ data });
+      return fastify.prisma.farm.create({
+        data: {
+          ...data,
+          country:   data.country   ?? undefined,
+          story:     data.story     ?? undefined,
+          photoIpfs: data.photoIpfs ?? undefined,
+        },
+      });
     }
   );
 
@@ -42,7 +49,15 @@ const farmsRoutes: FastifyPluginAsync = async (fastify) => {
     async (req, reply) => {
       const data = farmBody.partial().parse(req.body);
       try {
-        return await fastify.prisma.farm.update({ where: { id: req.params.id }, data });
+        return await fastify.prisma.farm.update({
+          where: { id: req.params.id },
+          data: {
+            ...data,
+            country:   data.country   ?? undefined,
+            story:     data.story     ?? undefined,
+            photoIpfs: data.photoIpfs ?? undefined,
+          },
+        });
       } catch {
         return reply.status(404).send({ error: "Farm not found" });
       }
